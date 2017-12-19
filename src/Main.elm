@@ -3,7 +3,7 @@ module Main exposing (main)
 import Html
 import Http
 import View exposing (view)
-import Types exposing (..)
+import Types exposing (Model, Msg(..), TemperatureScale(..))
 import Decoder exposing (weatherDecoder)
 
 

@@ -4,7 +4,7 @@ import Html exposing (Html, button, div, input, table, td, text, tr, a)
 import Html.Attributes exposing (placeholder, style, type_, href, target)
 import Html.Events exposing (onClick, onInput)
 import Http
-import Types exposing (..)
+import Types exposing (Model, Msg(..), TemperatureScale(..), Weather)
 
 
 view : Model -> Html Msg
