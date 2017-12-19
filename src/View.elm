@@ -27,7 +27,7 @@ mainStyle =
         [ ( "margin", "15px" )
         , ( "margin-top", "20px" )
         , ( "background-color", "#eee" )
-        , ( "width", "200px" )
+        , ( "width", "240px" )
         ]
 
 
@@ -120,6 +120,7 @@ realWeatherTable weather temperatureScale =
         [ locationRow weather
         , temperatureRow weather temperatureScale
         , humidityRow weather
+        , indoorRHRow weather
         , pressureRow weather
         ]
 
@@ -145,10 +146,15 @@ temperatureRow weather temperatureScale =
 temperatureString weather temperatureScale =
     case temperatureScale of
         Centigrade ->
-            (toString <| toCentigrade <| weather.main.temp) ++ " C"
+            addSuffix "C" <| toString <| toCentigrade <| weather.main.temp
 
         Fahrenheit ->
-            (toString <| toFahrenheit <| weather.main.temp) ++ " F"
+            addSuffix "F" <| toString <| toFahrenheit <| weather.main.temp
+
+
+addSuffix : String -> String -> String
+addSuffix suffix str =
+    str ++ " " ++ suffix
 
 
 humidityRow : Weather -> Html msg
@@ -156,7 +162,7 @@ humidityRow weather =
     tr []
         [ td [] [ text "Humidity" ]
         , td [ style [ ( "padding-left", "20px" ) ] ]
-            [ text <| toString <| weather.main.humidity ]
+            [ text <| addSuffix "%" <| toString <| weather.main.humidity ]
         ]
 
 
@@ -165,7 +171,16 @@ pressureRow weather =
     tr []
         [ td [] [ text "Pressure" ]
         , td [ style [ ( "padding-left", "20px" ) ] ]
-            [ text <| toString <| weather.main.pressure ]
+            [ text <| addSuffix "mb" <| toString <| weather.main.pressure ]
+        ]
+
+
+indoorRHRow : Weather -> Html msg
+indoorRHRow weather =
+    tr []
+        [ td [] [ text "Indoor RH" ]
+        , td [ style [ ( "padding-left", "20px" ) ] ]
+            [ text <| addSuffix "%" <| toString <| toFloat <| round <| (rhIndoor 22.2 weather) * 100 ]
         ]
 
 
@@ -177,3 +192,53 @@ toCentigrade kelvin =
 toFahrenheit : Float -> Float
 toFahrenheit kelvin =
     1.8 * (kelvin - 273.15) + 32 |> round |> toFloat
+
+
+
+{- Relative humidity -}
+
+
+exp x =
+    Basics.e ^ x
+
+
+{-| Equilibrium vapor pressure:
+<https://en.wikipedia.org/wiki/Relative_humidity>
+<http://ww2010.atmos.uiuc.edu/(Gh)/guides/mtr/cld/dvlp/rh.rxml>
+<https://en.wikipedia.org/wiki/Vapor_pressure>
+<https://chem.libretexts.org/Textbook_Maps/General_Chemistry_Textbook_Maps/Map%3A_Chemistry%3A_The_Central_Science_(Brown_et_al.)/11%3A_Liquids_and_Intermolecular_Forces/11.5%3A_Vapor_Pressure>
+-}
+evp temperature pressure =
+    let
+        temp =
+            temperature - 273.15
+    in
+        (1.0007 + 0.00000346 * pressure) * 6.1121 * exp (17.502 * temp / (240.9 + temp))
+
+
+{-| Actual vapor density
+-}
+avp temperature pressure humidity =
+    (evp temperature pressure) * humidity / 100
+
+
+avpOfWeather weather =
+    avp weather.main.temp weather.main.pressure weather.main.humidity
+
+
+rhIndoor indoorCentigradeTemperature weather =
+    let
+        indoorTemperature =
+            indoorCentigradeTemperature + 273.15
+
+        numerator =
+            avpOfWeather weather
+
+        denominator =
+            evp indoorTemperature weather.main.pressure
+    in
+        numerator / denominator
+
+
+
+-- rhAtRoomTemperature weather =
