@@ -1,10 +1,13 @@
 module Main exposing (main)
 
 import Html exposing (Html, button, div, input, table, td, text, tr, a)
-import Html.Attributes exposing (placeholder, style, type_, href)
+import Html.Attributes exposing (placeholder, style, type_, href, target)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode exposing (Decoder, decodeString, field, float, int, map2, map3, map4, map5, string)
+
+
+-- http://crossingtheruby.com/2015/11/11/minimum-viable-elm-view.html
 
 
 main =
@@ -21,6 +24,7 @@ type alias Model =
     , message : String
     , location : String
     , apiKey : String
+    , temperatureScale : TemperatureScale
     }
 
 
@@ -29,6 +33,11 @@ type alias Weather =
     , name : String
     , main : Main
     }
+
+
+type TemperatureScale
+    = Centigrade
+    | Fahrenheit
 
 
 type alias Main =
@@ -46,6 +55,7 @@ init =
       , message = "app started"
       , location = "london"
       , apiKey = ""
+      , temperatureScale = Centigrade
       }
     , Cmd.none
     )
@@ -57,6 +67,8 @@ type Msg
     | NewWeather (Result Http.Error Weather)
     | SetLocation String
     | SetApiKey String
+    | SetToCentigrade
+    | SetToFahrenheit
 
 
 subscriptions model =
@@ -84,16 +96,23 @@ update msg model =
         SetApiKey apiKey ->
             ( { model | apiKey = apiKey }, Cmd.none )
 
+        SetToCentigrade ->
+            ( { model | temperatureScale = Centigrade }, Cmd.none )
+
+        SetToFahrenheit ->
+            ( { model | temperatureScale = Fahrenheit }, Cmd.none )
+
 
 view : Model -> Html Msg
 view model =
     div [ mainStyle ]
         [ div [ innerStyle ]
-            [ weatherTable model.weather
+            [ weatherTable model.weather model.temperatureScale
             , setLocationInput model
             , getWeatherButton model
-            , setApiKeyInput model
+            , setTemperatureControl model
             , messageLine model
+            , setApiKeyInput model
             , getApiKeyLink
             ]
         ]
@@ -117,18 +136,51 @@ setLocationInput model =
 
 
 setApiKeyInput model =
-    div [ style [ ( "margin-bottom", "10px" ) ] ] [ input [ type_ "password", placeholder "Api key", onInput SetApiKey ] [] ]
+    div [ style [ ( "margin-top", "20px" ) ] ] [ input [ type_ "password", placeholder "Api key", onInput SetApiKey ] [] ]
 
 
 getWeatherButton model =
-    div [ style [ ( "margin-bottom", "20px" ) ] ] [ button [ onClick GetWeather ] [ text "Get weather" ] ]
+    div [ style [ ( "margin-bottom", "0px" ) ] ] [ button [ onClick GetWeather ] [ text "Get weather" ] ]
+
+
+setTemperatureControl model =
+    div []
+        [ setToCentigrade model
+        , setToFahrenheit model
+        ]
+
+
+centigradeStyle model =
+    case model.temperatureScale of
+        Centigrade ->
+            style [ ( "background-color", "black" ), ( "color", "white" ) ]
+
+        Fahrenheit ->
+            style [ ( "background-color", "#888" ), ( "color", "white" ) ]
+
+
+fahrenheitStyle model =
+    case model.temperatureScale of
+        Centigrade ->
+            style [ ( "background-color", "#888" ), ( "color", "white" ) ]
+
+        Fahrenheit ->
+            style [ ( "background-color", "black" ), ( "color", "white" ) ]
+
+
+setToCentigrade model =
+    button [ onClick SetToCentigrade, centigradeStyle model ] [ text "C" ]
+
+
+setToFahrenheit model =
+    button [ onClick SetToFahrenheit, fahrenheitStyle model ] [ text "F" ]
 
 
 getApiKeyLink =
     div
-        [ style [ ( "margin-top", "25px" ) ] ]
+        [ style [ ( "margin-top", "8px" ) ] ]
         [ a
-            [ href "https://openweathermap.org/price" ]
+            [ href "https://openweathermap.org/price", target "_blank" ]
             [ text "get Api key" ]
         ]
 
@@ -142,11 +194,11 @@ messageLine model =
 {- WEATHER DISPLAY -}
 
 
-weatherTable : Maybe Weather -> Html msg
-weatherTable maybeWeather =
+weatherTable : Maybe Weather -> TemperatureScale -> Html msg
+weatherTable maybeWeather temperatureScale =
     case maybeWeather of
         Just weather ->
-            realWeatherTable weather
+            realWeatherTable weather temperatureScale
 
         Nothing ->
             noWeatherTable
@@ -158,11 +210,11 @@ noWeatherTable =
         [ text "No weather data available" ]
 
 
-realWeatherTable : Weather -> Html msg
-realWeatherTable weather =
+realWeatherTable : Weather -> TemperatureScale -> Html msg
+realWeatherTable weather temperatureScale =
     table [ style [ ( "margin-bottom", "20px" ) ] ]
         [ locationRow weather
-        , temperatureRow weather
+        , temperatureRow weather temperatureScale
         , humidityRow weather
         , pressureRow weather
         ]
@@ -177,13 +229,22 @@ locationRow weather =
         ]
 
 
-temperatureRow : Weather -> Html msg
-temperatureRow weather =
+temperatureRow : Weather -> TemperatureScale -> Html msg
+temperatureRow weather temperatureScale =
     tr []
         [ td [] [ text "Temp" ]
         , td [ style [ ( "padding-left", "20px" ) ] ]
-            [ text <| toString <| toFahrenheit <| toCentigrade <| weather.main.temp ]
+            [ text <| temperatureString weather temperatureScale ]
         ]
+
+
+temperatureString weather temperatureScale =
+    case temperatureScale of
+        Centigrade ->
+            (toString <| toCentigrade <| weather.main.temp) ++ " C"
+
+        Fahrenheit ->
+            (toString <| toFahrenheit <| toCentigrade <| weather.main.temp) ++ " F"
 
 
 humidityRow : Weather -> Html msg
