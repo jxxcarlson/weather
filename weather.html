@@ -1,0 +1,31 @@
+<div id="main"></div>
+<script src="main.js"></script>
+<script>
+
+    var node = document.getElementById('main');
+    var app = Elm.Main.embed(node);
+
+    app.ports.sendApiKey.subscribe(function (apiKey) {
+      console.log("apiKey = " + apiKey)
+      localStorage.setItem("apiKey", apiKey);
+    })
+
+    app.ports.sendRequest.subscribe(function (request) {
+      console.log("request = " + request)
+      if (request == "getApiKey") {
+        console.log("OK, boss, I will send you the apiKey")
+        var apiKey = localStorage.getItem("apiKey")
+        if (apiKey != null) {
+          console.log("Api Key found: " + apiKey)
+          app.ports.restoreApiKey.send(apiKey);
+        } else {
+          console.log("Api Key not found in local storage")
+        }
+      } else {
+        console.log("Unrecognized request")
+      }
+    })
+
+
+
+</script>
