@@ -1,10 +1,11 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Html
 import Http
 import View exposing (view)
-import Types exposing (Model, Msg(..), TemperatureScale(..))
+import Types exposing (Model, Msg(..), TemperatureScale(..), Status(..))
 import Decoder exposing (weatherDecoder)
+import Json.Encode as Encode
 
 
 -- http://crossingtheruby.com/2015/11/11/minimum-viable-elm-view.html
@@ -26,13 +27,14 @@ init =
       , location = "london"
       , apiKey = ""
       , temperatureScale = Centigrade
+      , status = Start
       }
-    , Cmd.none
+    , sendRequest "getApiKey"
     )
 
 
 subscriptions model =
-    Sub.none
+    restoreApiKey RestoreApiKey
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -45,22 +47,47 @@ update msg model =
             ( model, getNewWeatherByCity model.location model.apiKey )
 
         NewWeather (Ok newData) ->
-            ( { model | weather = Just newData, message = "Successful request" }, Cmd.none )
+            ( { model
+                | weather = Just newData
+                , message = "Successful request"
+                , status = Authenticated
+              }
+            , Cmd.none
+            )
 
         NewWeather (Err error) ->
-            ( { model | message = "Error" }, Cmd.none )
+            ( { model | message = "Error", status = Error }, Cmd.none )
 
         SetLocation location ->
             ( { model | location = location }, Cmd.none )
 
         SetApiKey apiKey ->
-            ( { model | apiKey = apiKey }, Cmd.none )
+            ( { model | apiKey = apiKey }, saveApiKey apiKey )
 
         SetToCentigrade ->
             ( { model | temperatureScale = Centigrade }, Cmd.none )
 
         SetToFahrenheit ->
             ( { model | temperatureScale = Fahrenheit }, Cmd.none )
+
+        RestoreApiKey apiKey ->
+            let
+                _ =
+                    Debug.log "APIKEY = " apiKey
+
+                status =
+                    if apiKey /= "" then
+                        Starting
+                    else
+                        Start
+
+                message =
+                    if apiKey == "" then
+                        "apiKey: NOT FOUND"
+                    else
+                        "apiKey found"
+            in
+                ( { model | apiKey = apiKey, status = status, message = message }, Cmd.none )
 
 
 getNewWeatherByCity : String -> String -> Cmd Msg
@@ -73,3 +100,20 @@ getNewWeatherByCity city apiKey =
             Http.get url weatherDecoder
     in
         Http.send NewWeather request
+
+
+saveApiKey apiKey =
+    sendApiKey apiKey
+
+
+
+-- sendApiKey (Encode.object [ ( "apiKey", apiKey ) ])
+
+
+port sendApiKey : String -> Cmd msg
+
+
+port sendRequest : String -> Cmd msg
+
+
+port restoreApiKey : (String -> msg) -> Sub msg

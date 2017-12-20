@@ -10,6 +10,7 @@ type alias Model =
     , location : String
     , apiKey : String
     , temperatureScale : TemperatureScale
+    , status : Status
     }
 
 
@@ -21,6 +22,14 @@ type Msg
     | SetApiKey String
     | SetToCentigrade
     | SetToFahrenheit
+    | RestoreApiKey String
+
+
+type Status
+    = Start
+    | Starting
+    | Authenticated
+    | Error
 
 
 type alias Weather =
