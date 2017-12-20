@@ -1,14 +1,12 @@
 port module Main exposing (main)
 
+{- This app retrieves and displays weather data from openweathermap.org. -}
+
+import Decoder exposing (weatherDecoder)
 import Html
 import Http
-import View exposing (view)
 import Types exposing (Model, Msg(..), TemperatureScale(..), Status(..))
-import Decoder exposing (weatherDecoder)
-import Json.Encode as Encode
-
-
--- http://crossingtheruby.com/2015/11/11/minimum-viable-elm-view.html
+import View exposing (view)
 
 
 main =
@@ -40,9 +38,6 @@ subscriptions model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
         GetWeather ->
             ( model, getNewWeatherByCity model.location model.apiKey )
 
@@ -71,25 +66,11 @@ update msg model =
             ( { model | temperatureScale = Fahrenheit }, Cmd.none )
 
         RestoreApiKey apiKey ->
-            let
-                _ =
-                    Debug.log "APIKEY = " apiKey
-
-                status =
-                    if apiKey /= "" then
-                        Starting
-                    else
-                        Start
-
-                message =
-                    if apiKey == "" then
-                        "apiKey: NOT FOUND"
-                    else
-                        "apiKey found"
-            in
-                ( { model | apiKey = apiKey, status = status, message = message }, Cmd.none )
+            doRestoreApiKey apiKey model
 
 
+{-| Data request for openweathermap.org
+-}
 getNewWeatherByCity : String -> String -> Cmd Msg
 getNewWeatherByCity city apiKey =
     let
@@ -102,18 +83,43 @@ getNewWeatherByCity city apiKey =
         Http.send NewWeather request
 
 
+
+{- Helpers for managing a copy of the apiKey in local storage. -}
+
+
 saveApiKey apiKey =
     sendApiKey apiKey
 
 
+doRestoreApiKey apiKey model =
+    let
+        status =
+            if apiKey /= "" then
+                Starting
+            else
+                Start
 
--- sendApiKey (Encode.object [ ( "apiKey", apiKey ) ])
+        message =
+            if apiKey == "" then
+                "apiKey: NOT FOUND"
+            else
+                "apiKey found"
+    in
+        ( { model | apiKey = apiKey, status = status, message = message }, Cmd.none )
+
+
+
+{- Outbound ports -}
 
 
 port sendApiKey : String -> Cmd msg
 
 
 port sendRequest : String -> Cmd msg
+
+
+
+{- Inbound ports -}
 
 
 port restoreApiKey : (String -> msg) -> Sub msg

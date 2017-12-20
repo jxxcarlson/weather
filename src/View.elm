@@ -7,6 +7,9 @@ import Http
 import Types exposing (Model, Msg(..), TemperatureScale(..), Weather, Status(..))
 
 
+{- Main view function -}
+
+
 view : Model -> Html Msg
 view model =
     div [ mainStyle ]
@@ -29,6 +32,10 @@ showIf condition element =
         text ""
 
 
+
+{- Style -}
+
+
 mainStyle =
     style
         [ ( "margin", "15px" )
@@ -42,12 +49,20 @@ innerStyle =
     style [ ( "padding", "15px" ) ]
 
 
+
+{- Inputs -}
+
+
 setLocationInput model =
     div [ style [ ( "margin-bottom", "10px" ) ] ] [ input [ type_ "text", placeholder "Location", onInput SetLocation ] [] ]
 
 
 setApiKeyInput model =
     div [ style [ ( "margin-top", "20px" ) ] ] [ input [ type_ "password", placeholder "Api key", onInput SetApiKey ] [] ]
+
+
+
+{- Controls -}
 
 
 getWeatherButton model =
@@ -87,6 +102,10 @@ setToFahrenheit model =
     button [ onClick SetToFahrenheit, fahrenheitStyle model ] [ text "F" ]
 
 
+
+{- Links and text -}
+
+
 getApiKeyLink =
     div
         [ style [ ( "margin-top", "8px" ) ] ]
@@ -101,8 +120,7 @@ messageLine model =
 
 
 
--- text <| toString <| (decodeString weatherDecoder data)
-{- WEATHER DISPLAY -}
+{- Weather display -}
 
 
 weatherTable : Maybe Weather -> TemperatureScale -> Html msg
@@ -130,6 +148,10 @@ realWeatherTable weather temperatureScale =
         , indoorRHRow weather
         , pressureRow weather
         ]
+
+
+
+{- Rows for the weather display -}
 
 
 locationRow : Weather -> Html msg
@@ -191,6 +213,10 @@ indoorRHRow weather =
         ]
 
 
+
+{- Conversions -}
+
+
 toCentigrade : Float -> Float
 toCentigrade kelvin =
     kelvin - 273.15 |> round |> toFloat
@@ -223,16 +249,22 @@ evp temperature pressure =
         (1.0007 + 0.00000346 * pressure) * 6.1121 * exp (17.502 * temp / (240.9 + temp))
 
 
-{-| Actual vapor density
+{-| Actual vapor pressuure
 -}
 avp temperature pressure humidity =
     (evp temperature pressure) * humidity / 100
 
 
+{-| convenience function for actual vapor pressure
+-}
 avpOfWeather weather =
     avp weather.main.temp weather.main.pressure weather.main.humidity
 
 
+{-| Computed indoor relative humidity based on
+assumption that when outdoor air is heated/cooled,
+water is neither added nor subtracted.
+-}
 rhIndoor indoorCentigradeTemperature weather =
     let
         indoorTemperature =
@@ -245,7 +277,3 @@ rhIndoor indoorCentigradeTemperature weather =
             evp indoorTemperature weather.main.pressure
     in
         numerator / denominator
-
-
-
--- rhAtRoomTemperature weather =

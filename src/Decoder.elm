@@ -1,5 +1,7 @@
 module Decoder exposing (weatherDecoder)
 
+{- Decode data returned from openweathermap.org as Weather value. -}
+
 import Json.Decode exposing (Decoder, decodeString, field, float, int, map2, map3, map4, map5, string)
 import Types exposing (Weather, Main)
 
@@ -22,6 +24,10 @@ mainDecoder =
         (field "temp_min" float)
 
 
+{-| Below is an example of the data structure returned by
+openweathermap.org. It is not used in the app,
+but is useful as a reference.
+-}
 data =
     """{"coord":{"lon":139,"lat":35},
 "sys":{"country":"JP","sunrise":1369769524,"sunset":1369821049},

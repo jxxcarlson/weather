@@ -15,8 +15,7 @@ type alias Model =
 
 
 type Msg
-    = NoOp
-    | GetWeather
+    = GetWeather
     | NewWeather (Result Http.Error Weather)
     | SetLocation String
     | SetApiKey String
@@ -32,16 +31,16 @@ type Status
     | Error
 
 
+type TemperatureScale
+    = Centigrade
+    | Fahrenheit
+
+
 type alias Weather =
     { id : Int
     , name : String
     , main : Main
     }
-
-
-type TemperatureScale
-    = Centigrade
-    | Fahrenheit
 
 
 type alias Main =
