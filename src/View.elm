@@ -54,11 +54,13 @@ innerStyle =
 
 
 setLocationInput model =
-    div [ style [ ( "margin-bottom", "10px" ) ] ] [ input [ type_ "text", placeholder "Location", onInput SetLocation ] [] ]
+    div [ style [ ( "margin-bottom", "10px" ) ] ]
+        [ input [ type_ "text", placeholder "Location", onInput SetLocation ] [] ]
 
 
 setApiKeyInput model =
-    div [ style [ ( "margin-top", "20px" ) ] ] [ input [ type_ "password", placeholder "Api key", onInput SetApiKey ] [] ]
+    div [ style [ ( "margin-top", "20px" ) ] ]
+        [ input [ type_ "password", placeholder "Api key", onInput SetApiKey ] [] ]
 
 
 
@@ -66,7 +68,8 @@ setApiKeyInput model =
 
 
 getWeatherButton model =
-    div [ style [ ( "margin-bottom", "0px" ) ] ] [ button [ onClick GetWeather ] [ text "Get weather" ] ]
+    div [ style [ ( "margin-bottom", "0px" ) ] ]
+        [ button [ onClick GetWeather ] [ text "Get weather" ] ]
 
 
 setTemperatureControl model =
@@ -123,6 +126,9 @@ messageLine model =
 {- Weather display -}
 
 
+{-| Dispatch: if there is valid weather data, display it,
+otherwise display a messaget saying that there is none.
+-}
 weatherTable : Maybe Weather -> TemperatureScale -> Html msg
 weatherTable maybeWeather temperatureScale =
     case maybeWeather of
@@ -181,11 +187,6 @@ temperatureString weather temperatureScale =
             addSuffix "F" <| toString <| toFahrenheit <| weather.main.temp
 
 
-addSuffix : String -> String -> String
-addSuffix suffix str =
-    str ++ " " ++ suffix
-
-
 humidityRow : Weather -> Html msg
 humidityRow weather =
     tr []
@@ -204,6 +205,8 @@ pressureRow weather =
         ]
 
 
+{-| Computed indoor relative humidity at 22 C
+-}
 indoorRHRow : Weather -> Html msg
 indoorRHRow weather =
     tr []
@@ -211,6 +214,18 @@ indoorRHRow weather =
         , td [ style [ ( "padding-left", "20px" ) ] ]
             [ text <| addSuffix "%" <| toString <| toFloat <| round <| (rhIndoor 22.2 weather) * 100 ]
         ]
+
+
+{-| Helper function.
+
+    addSufix "C" "12.3"
+
+yields the string "12.3 C"
+
+-}
+addSuffix : String -> String -> String
+addSuffix suffix str =
+    str ++ " " ++ suffix
 
 
 
@@ -255,13 +270,7 @@ avp temperature pressure humidity =
     (evp temperature pressure) * humidity / 100
 
 
-{-| convenience function for actual vapor pressure
--}
-avpOfWeather weather =
-    avp weather.main.temp weather.main.pressure weather.main.humidity
-
-
-{-| Computed indoor relative humidity based on
+{-| Computed indoor relative humidity at 22 C based on
 assumption that when outdoor air is heated/cooled,
 water is neither added nor subtracted.
 -}
@@ -271,7 +280,7 @@ rhIndoor indoorCentigradeTemperature weather =
             indoorCentigradeTemperature + 273.15
 
         numerator =
-            avpOfWeather weather
+            avp weather.main.temp weather.main.pressure weather.main.humidity
 
         denominator =
             evp indoorTemperature weather.main.pressure

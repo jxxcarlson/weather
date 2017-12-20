@@ -42,13 +42,7 @@ update msg model =
             ( model, getNewWeatherByCity model.location model.apiKey )
 
         NewWeather (Ok newData) ->
-            ( { model
-                | weather = Just newData
-                , message = "Successful request"
-                , status = Authenticated
-              }
-            , Cmd.none
-            )
+            updateWeather newData model
 
         NewWeather (Err error) ->
             ( { model | message = "Error", status = Error }, Cmd.none )
@@ -56,21 +50,23 @@ update msg model =
         SetLocation location ->
             ( { model | location = location }, Cmd.none )
 
-        SetApiKey apiKey ->
-            ( { model | apiKey = apiKey }, saveApiKey apiKey )
-
         SetToCentigrade ->
             ( { model | temperatureScale = Centigrade }, Cmd.none )
 
         SetToFahrenheit ->
             ( { model | temperatureScale = Fahrenheit }, Cmd.none )
 
+        SetApiKey apiKey ->
+            ( { model | apiKey = apiKey }, saveApiKey apiKey )
+
         RestoreApiKey apiKey ->
             doRestoreApiKey apiKey model
 
 
-{-| Data request for openweathermap.org
--}
+
+{- Data request and handling for openweathermap.org -}
+
+
 getNewWeatherByCity : String -> String -> Cmd Msg
 getNewWeatherByCity city apiKey =
     let
@@ -83,8 +79,24 @@ getNewWeatherByCity city apiKey =
         Http.send NewWeather request
 
 
+updateWeather newData model =
+    ( { model
+        | weather = Just newData
+        , message = "Successful request"
+        , status = Authenticated
+      }
+    , Cmd.none
+    )
 
-{- Helpers for managing a copy of the apiKey in local storage. -}
+
+
+{- Helpers for managing a copy of the apiKey in local storage.
+   When the user enters an API key, a copy is placed in local storage.
+   When the app is booted up -- or the browser is refreshed --
+   the app sends a request through ports to retrieve the API key
+   from local storage.  If retrieval is successful, the use will
+   not have to re-enter the API key.
+-}
 
 
 saveApiKey apiKey =
@@ -119,7 +131,7 @@ port sendRequest : String -> Cmd msg
 
 
 
-{- Inbound ports -}
+{- Inbound port -}
 
 
 port restoreApiKey : (String -> msg) -> Sub msg
