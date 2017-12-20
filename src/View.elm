@@ -118,7 +118,7 @@ weatherTable maybeWeather temperatureScale =
 noWeatherTable : Html msg
 noWeatherTable =
     div [ style [ ( "margin-bottom", "20px" ) ] ]
-        [ text "No weather data available" ]
+        [ text "No weather data" ]
 
 
 realWeatherTable : Weather -> TemperatureScale -> Html msg
