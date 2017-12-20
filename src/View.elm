@@ -4,7 +4,7 @@ import Html exposing (Html, button, div, input, table, td, text, tr, a)
 import Html.Attributes exposing (placeholder, style, type_, href, target)
 import Html.Events exposing (onClick, onInput)
 import Http
-import Types exposing (Model, Msg(..), TemperatureScale(..), Weather)
+import Types exposing (Model, Msg(..), TemperatureScale(..), Weather, Status(..))
 
 
 view : Model -> Html Msg
@@ -16,10 +16,17 @@ view model =
             , getWeatherButton model
             , setTemperatureControl model
             , messageLine model
-            , setApiKeyInput model
-            , getApiKeyLink
+            , showIf (not <| List.member model.status [ Authenticated, Starting ]) (setApiKeyInput model)
+            , showIf (not <| List.member model.status [ Authenticated, Starting ]) getApiKeyLink
             ]
         ]
+
+
+showIf condition element =
+    if condition then
+        element
+    else
+        text ""
 
 
 mainStyle =
@@ -90,7 +97,7 @@ getApiKeyLink =
 
 
 messageLine model =
-    div [ style [ ( "margin-bottom", "10px" ) ] ] [ text model.message ]
+    div [ style [ ( "margin-bottom", "10px" ), ( "margin-top", "10px" ) ] ] [ text model.message ]
 
 
 
